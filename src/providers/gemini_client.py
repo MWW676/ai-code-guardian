@@ -7,12 +7,18 @@ from google import genai
 from google.genai import types
 from google.genai.errors import APIError
 from src.providers.llm_base import LLMProvider
+from src.core.models import ReportModel
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
 
 class GeminiClient(LLMProvider):
-    """Gemini openapi client to process llm prompts."""
+    SYSTEM_PROMPT = """
+    You are a Senior Tech Lead and security auditor.
+    Your task is to analyze the provided Git Diff to identify potential bugs, security vulnerabilities, and code that does not conform to Python PEP8 specifications.
+    Your responses must strictly adhere to the JSON Schema below and cannot contain any additional prose or Markdown tags (such as ```json`).
+    """
+
     def __init__(self):
         api_key = os.environ.get('GEMINI_API_KEY')
         if not api_key:
@@ -67,15 +73,34 @@ class GeminiClient(LLMProvider):
         self.LAST_REQUEST_TIME = now
         return True
 
+    def generate_prompt(self, contents: str) -> str:
+        # Construct prompt
+        review_schema_dict = ReportModel.model_json_schema()
+        prompt = f"""
+        --- START SYSTEM INSTRUCTION ---
+        {self.SYSTEM_PROMPT}
+
+        [JSON SCHEMA BEGIN]
+        {json.dumps(review_schema_dict, indent=2)}
+        [JSON SCHEMA END]
+        --- END SYSTEM INSTRUCTION ---
+
+        Please start to analyze the following code diff:
+        [GIT DIFF CONTENT START]
+        {contents}
+        [GIT DIFF CONTENT END]
+        """
+        return prompt
+
     def analyze_diff(self, contents: str) -> dict:
         """Generates content through Gemini open api call."""
-        if not self.check_and_reset_limits(contents=contents):
+        final_prompt = self.generate_prompt(contents=contents)
+        if not self.check_and_reset_limits(contents=final_prompt):
             logger.warning("Limit or token quota check failed.")
             return {"status":"SKIPPED", "reason": "Rate/Token limit exceeded."}
 
         try:
-            logger.info(f"Calculating score with model: {self.model_name}...")
-
+            logger.info(f"Evaluating code diff with model: {self.model_name}...")
             config_object = types.GenerateContentConfig(
                 max_output_tokens=self._max_output_tokens,
                 response_mime_type="application/json"
@@ -86,9 +111,7 @@ class GeminiClient(LLMProvider):
                 config=config_object,
             )
 
-            # 4. Update the global counters AFTER successful execution
             self.DAILY_REQUEST_COUNT += 1
-            # The total tokens used for the call is the sum of input and output
             actual_total_tokens = response.usage_metadata.total_token_count
             self.CURRENT_MINUTE_TOKEN_COUNT += actual_total_tokens
 
