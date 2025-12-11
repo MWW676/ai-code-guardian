@@ -1,0 +1,69 @@
+diff --git a/src/providers/gemini_client.py b/src/providers/gemini_client.py
+index df12f64..6dac777 100644
+--- a/src/providers/gemini_client.py
++++ b/src/providers/gemini_client.py
+@@ -7,12 +7,18 @@ from google import genai
+ from google.genai import types
+ from google.genai.errors import APIError
+ from src.providers.llm_base import LLMProvider
++from src.providers.review_schema import REVIEW_SCHEMA
+ 
+ logger = logging.getLogger(__name__)
+ logger.setLevel(logging.WARNING)
+ 
+ class GeminiClient(LLMProvider):
+-    """Gemini openapi client to process llm prompts."""
++    SYSTEM_PROMPT = """
++    You are a Senior Tech Lead and security auditor.
++    Your task is to analyze the provided Git Diff to identify potential bugs, security vulnerabilities, and code that does not conform to Python PEP8 specifications.
++    Your responses must strictly adhere to the JSON Schema below and cannot contain any additional prose or Markdown tags (such as ```json`).
++    """
++
+     def __init__(self):
+         api_key = os.environ.get('GEMINI_API_KEY')
+         if not api_key:
+@@ -69,12 +75,28 @@ class GeminiClient(LLMProvider):
+ 
+     def analyze_diff(self, contents: str) -> dict:
+         """Generates content through Gemini open api call."""
+-        if not self.check_and_reset_limits(contents=contents):
++        # Construct prompt
++        final_prompt = f"""
++        --- START SYSTEM INSTRUCTION ---
++        {self.SYSTEM_PROMPT}
++        
++        [JSON SCHEMA BEGIN]
++        {json.dumps(REVIEW_SCHEMA, indent=2)}
++        [JSON SCHEMA END]
++        --- END SYSTEM INSTRUCTION ---
++        
++        Please start to analyze the following code diff:
++        [GIT DIFF CONTENT START]
++        {contents}
++        [GIT DIFF CONTENT END]
++        """
++
++        if not self.check_and_reset_limits(contents=final_prompt):
+             logger.warning("Limit or token quota check failed.")
+             return {"status":"SKIPPED", "reason": "Rate/Token limit exceeded."}
+ 
+         try:
+-            logger.info(f"Calculating score with model: {self.model_name}...")
++            logger.info(f"Evaluating code diff with model: {self.model_name}...")
+ 
+             config_object = types.GenerateContentConfig(
+                 max_output_tokens=self._max_output_tokens,
+diff --git a/src/providers/review_schema.py b/src/providers/review_schema.py
+index 01de689..909df22 100644
+--- a/src/providers/review_schema.py
++++ b/src/providers/review_schema.py
+@@ -1,7 +1,6 @@
+-
+-{
++REVIEW_SCHEMA = {
+     "status": "PASS" | "FAIL" | "NEEDS_ATTENTION",
+-    "risk_score": 0,
++    "risk_score": 0, # 0-100
+     "comments": [
+         {
+             "severity": "CRITICAL" | "MINOR" | "INFO",
