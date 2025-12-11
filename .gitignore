@@ -1,0 +1,13 @@
+# .gitignore file content
+
+# --- IDE Files (PyCharm, VS Code, etc.) ---
+.idea/
+*.iml
+*.pyc
+
+# --- Virtual Environment ---
+venv/
+
+# --- Local Secrets and Configuration ---
+# Ignore the .env file to prevent API keys and secrets from being committed.
+.env
