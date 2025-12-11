@@ -4,7 +4,6 @@ import time
 import logging
 from dateutil import parser
 from google import genai
-from dotenv import load_dotenv
 from google.genai import types
 from google.genai.errors import APIError
 from src.providers.llm_base import LLMProvider
@@ -87,12 +86,13 @@ class GeminiClient(LLMProvider):
             logger.info(f"Request {self.DAILY_REQUEST_COUNT + 1}/{self._MAX_RPD} initiated.")
 
             config_object = types.GenerateContentConfig(
-                max_output_tokens=max_output_tokens  # Passes the integer value
+                max_output_tokens=max_output_tokens,
+                response_mime_type="application/json"
             )
             response = self.client.models.generate_content(
                 model=self.model_name,
                 contents=contents,
-                config=config_object
+                config=config_object,
             )
 
             # 4. Update the global counters AFTER successful execution
@@ -123,10 +123,3 @@ class GeminiClient(LLMProvider):
             "daily_request_raio": f"{self.DAILY_REQUEST_COUNT}/{self._MAX_RPD}"
         }
         return resp_dict
-
-# if __name__ == "__main__":
-#     load_dotenv()
-#     content = "Explain how AI works in a few words"
-#     provider = GeminiClient()
-#     resp = provider.analyze_diff(contents=content)
-#     print(f"Check in local run: \n{resp}")
