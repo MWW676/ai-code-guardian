@@ -1,5 +1,7 @@
-from google import genai
-from dotenv import load_dotenv
+from abc import ABC, abstractmethod
 
-load_dotenv()
-client = genai.Client()
+class LLMProvider(ABC):
+    @abstractmethod
+    def analyze_diff(self, contents: str) -> dict:
+        """Analyze a code diff with prompt by an AI client."""
+        pass
