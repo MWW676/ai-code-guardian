@@ -2,7 +2,7 @@ import os
 import json
 import time
 import logging
-from dateutil import parser
+from json import JSONDecodeError
 from google import genai
 from google.genai import types
 from google.genai.errors import APIError
@@ -14,22 +14,23 @@ logger.setLevel(logging.WARNING)
 class GeminiClient(LLMProvider):
     """Gemini openapi client to process llm prompts."""
     def __init__(self):
-        # --- Define Known Limits ---
-        self._MAX_RPD: int = 20
-        self._MAX_TPM: int = 250_000
-        # --- Global Tracking Variables ---
-        self.DAILY_REQUEST_COUNT: int = 0
-        self.LAST_REQUEST_TIME: float = time.time()
-        self.CURRENT_MINUTE_TOKEN_COUNT: int = 0
-        # --- Get API Key ---
         api_key = os.environ.get('GEMINI_API_KEY')
         if not api_key:
             raise EnvironmentError("GEMINI_API_KEY not found in environment.")
-        # --- init client and model ---
         self.client = genai.Client(api_key=api_key)
         self.model_name = "gemini-2.5-flash"
 
-    def check_and_reset_limits(self, contents: str, max_output_tokens: int):
+        # --- Define Known Limits ---
+        self._MAX_RPD: int = 20
+        self._MAX_TPM: int = 250_000
+        self._max_output_tokens = 2000
+        # --- Global Tracking Variables ---
+        # TODO: Implement DynamoDB for persistent rate limiting in Lambda
+        self.DAILY_REQUEST_COUNT: int = 0
+        self.LAST_REQUEST_TIME: float = time.time()
+        self.CURRENT_MINUTE_TOKEN_COUNT: int = 0
+
+    def check_and_reset_limits(self, contents: str):
         """
         1. Checks the time and resets the RPD or TPM counters if necessary.
         2. Checks token count to ensure its below threshold.
@@ -55,38 +56,28 @@ class GeminiClient(LLMProvider):
             return False
 
         # 4. TPM Check (Pre-calculate input cost)
-        try:
-            # Get the token count for the input prompt
-            count_response = self.client.models.count_tokens(
-                model=self.model_name,
-                contents=[contents]
-            )
-            input_tokens = count_response.total_tokens
-            potential_total_tokens = input_tokens + max_output_tokens
+        input_tokens = len(contents) / 4
+        potential_total_tokens = input_tokens + self._max_output_tokens
 
-            # Check against TPM limit
-            if self.CURRENT_MINUTE_TOKEN_COUNT + potential_total_tokens > self._MAX_TPM:
-                logger.warning(f"TPM limit would be exceeded. Skipping API call.")
-                return False
-
-        except APIError as e:
-            logger.error(f"Failed to count tokens: {e}. Skipping API call.")
+        if self.CURRENT_MINUTE_TOKEN_COUNT + potential_total_tokens > self._MAX_TPM:
+            logger.warning(f"TPM limit would be exceeded. Skipping API call.")
             return False
 
-        # 3. Always update the last request time
+        # 5. Always update the last request time
         self.LAST_REQUEST_TIME = now
         return True
 
-    def safe_generate_content(self, contents: str, max_output_tokens: int = 5000):
+    def analyze_diff(self, contents: str) -> dict:
         """Generates content through Gemini open api call."""
-        check_result = self.check_and_reset_limits(contents=contents, max_output_tokens=max_output_tokens)
-        assert check_result is True
+        if not self.check_and_reset_limits(contents=contents):
+            logger.warning("Limit or token quota check failed.")
+            return {"status":"SKIPPED", "reason": "Rate/Token limit exceeded."}
 
         try:
-            logger.info(f"Request {self.DAILY_REQUEST_COUNT + 1}/{self._MAX_RPD} initiated.")
+            logger.info(f"Calculating score with model: {self.model_name}...")
 
             config_object = types.GenerateContentConfig(
-                max_output_tokens=max_output_tokens,
+                max_output_tokens=self._max_output_tokens,
                 response_mime_type="application/json"
             )
             response = self.client.models.generate_content(
@@ -101,25 +92,26 @@ class GeminiClient(LLMProvider):
             actual_total_tokens = response.usage_metadata.total_token_count
             self.CURRENT_MINUTE_TOKEN_COUNT += actual_total_tokens
 
-            logger.info(f"[SUCCESS] Tokens used in this call: {actual_total_tokens}")
-            logger.info(f"Response: {response.text[:50]}...")
-            return response
+            # Build dict from resp
+            raw_text = response.text
+            clean_json_str = raw_text.replace("```json", "").replace("```", "").strip()
+
+            try:
+                ai_result = json.loads(clean_json_str)
+            except json.JSONDecodeError:
+                logger.error(f"Failed to parse JSON: {raw_text}")
+                ai_result = {"status": "ERROR", "raw": raw_text}
+
+            resp_dict = {
+                "result": ai_result,
+                "timestamp": time.time(),
+                "token_used": response.usage_metadata.total_token_count if response.usage_metadata else 0
+            }
+            return resp_dict
 
         except APIError as e:
             logger.error(f"An error occurred during the API call: {e}")
-            return None
-
-    def analyze_diff(self, contents: str) -> dict:
-        """Construct resp dict from Gemini api response."""
-        response = self.safe_generate_content(contents=contents)
-
-        # Build dict from resp
-        http_raw_resp = json.loads(response.sdk_http_response.model_dump_json())
-        date_string = http_raw_resp['headers'].get('date')
-
-        resp_dict = {
-            "result": response.text,
-            "timestamp": parser.parse(date_string).timestamp(),
-            "daily_request_raio": f"{self.DAILY_REQUEST_COUNT}/{self._MAX_RPD}"
-        }
-        return resp_dict
+            return {"status":"ERROR", "error": str(e)}
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
+            return {"status":"ERROR", "error": str(e)}
