@@ -12,4 +12,7 @@ except FileNotFoundError:
 
 provider = GeminiClient()
 resp = provider.analyze_diff(contents=diff_data)
-print(f"Check in local run: \n{resp}")
+if resp.get('status') != 'ERROR':
+    print(f"Check in local run: \n{resp}")
+else:
+    print(f"Error during execution: {resp.get('error')}")

@@ -123,10 +123,11 @@ class GeminiClient(LLMProvider):
                 ai_result = json.loads(clean_json_str)
             except json.JSONDecodeError:
                 logger.error(f"Failed to parse JSON: {raw_text}")
-                ai_result = {"status": "ERROR", "raw": raw_text}
+                ai_result = {"status": "ERROR", "error": raw_text}
 
             resp_dict = {
                 "result": ai_result,
+                "status": ai_result.get('status'),
                 "timestamp": time.time(),
                 "token_used": response.usage_metadata.total_token_count if response.usage_metadata else 0
             }
