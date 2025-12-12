@@ -1,7 +1,16 @@
+import sys
+import logging
 import pathlib
 from dotenv import load_dotenv
 from providers.gemini_client import GeminiClient
 from providers.s3_client import S3Uploader
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    stream=sys.stdout
+)
+main_logger = logging.getLogger(__name__)
 
 def ai_code_guardian():
     load_dotenv()
@@ -16,7 +25,7 @@ def ai_code_guardian():
     resp = provider.analyze_diff(contents=diff_data)
 
     if resp.get('status') not in ['ERROR', 'SKIPPED']:
-        print(f"Check in local run: \n{resp}")
+        print(f"Check in local run: \n{resp}\n")
         uploader = S3Uploader()
         upload_status = uploader.save_report(resp)
         assert upload_status is True
