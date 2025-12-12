@@ -5,18 +5,21 @@ import datetime
 import logging
 import boto3
 from botocore.exceptions import ClientError
+from src.providers.storage_base import StorageProvider
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-class S3Uploader:
+class S3Uploader(StorageProvider):
     def __init__(self):
         self._bucket_name = os.environ.get('AWS_S3_BUCKET')
+        if not self._bucket_name:
+            raise ValueError("AWS_S3_BUCKET environment variable is not set.")
         self.s3_client = boto3.client('s3')
 
     def save_report(self, report_data: dict) -> bool:
         """Save analysis report to AMS S3."""
-        report_data_json = json.dumps(report_data)
+        report_data_json = json.dumps(report_data, ensure_ascii=False, indent=2)
 
         now = datetime.datetime.now()
         s3_object_key = f"reports/{now.strftime('%Y-%m-%d')}/report-{int(time.time())}.json"
@@ -28,8 +31,7 @@ class S3Uploader:
                 Body=report_data_json.encode('utf-8'),
                 ContentType='application/json'
             )
-            logger.info(f"Successfully uploaded {s3_object_key} to {self._bucket_name}")
-            logger.info(f"S3 Response:{response}")
+            logger.info(f"Successfully uploaded: s3://{self._bucket_name}/{s3_object_key}")
             return True
 
         except ClientError as e:
