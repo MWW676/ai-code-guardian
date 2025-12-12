@@ -28,7 +28,7 @@ class GeminiClient(LLMProvider):
         # --- Define Known Limits ---
         self._MAX_RPD: int = 20
         self._MAX_TPM: int = 250_000
-        self._max_output_tokens = 2000
+        self._max_output_tokens = 6000
         # --- Global Tracking Variables ---
         # TODO: Implement DynamoDB for persistent rate limiting in Lambda
         self.DAILY_REQUEST_COUNT: int = 0
