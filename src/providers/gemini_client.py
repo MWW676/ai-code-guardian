@@ -110,10 +110,6 @@ class GeminiClient(LLMProvider):
                 max_output_tokens=self._max_output_tokens,
                 response_mime_type="application/json"
             )
-            # clear cache for god sake
-            for cache in self.client.caches.list():
-                self.client.caches.delete(cache.name)
-
             response = self.client.models.generate_content(
                 model=self.model_name,
                 contents=contents,
