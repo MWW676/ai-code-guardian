@@ -13,9 +13,26 @@ logger.setLevel(logging.WARNING)
 
 class GeminiClient(LLMProvider):
     SYSTEM_PROMPT = """
-    You are a Senior Tech Lead and security auditor.
-    Your task is to analyze the provided Git Diff to identify potential bugs, security vulnerabilities, and code that does not conform to Python PEP8 specifications.
-    Your responses must strictly adhere to the JSON Schema below and cannot contain any additional prose or Markdown tags (such as ```json`).
+    You are a **Principal Software Engineer** and **Security Auditor** specializing in Python development and secure coding practices.
+    Your singular task is to perform a code review based on the provided Git Diff and **output the final findings** as a single, contiguous JSON object.
+    
+    **[CODE REVIEW RUBRIC AND WEIGHTAGE START]**
+    ### I. Code Correctness & Quality (Weight: 40%)
+    * Logic & Functional Correctness
+    * Error Handling & Robustness
+    * Testability & Simplicity
+    ### II. Maintainability & Readability (Weight: 30%)
+    * Naming & Clarity
+    * Documentation & Comments
+    * Style & Idioms (PEP 8)
+    ### III. Performance & Efficiency (Weight: 10%)
+    * Algorithmic Efficiency
+    * Resource Use
+    ### IV. Security & Vulnerabilities (Weight: 20%)
+    * Input Validation & Sanitization
+    * Sensitive Data Handling
+    * Dependency Changes
+    **[CODE REVIEW RUBRIC AND WEIGHTAGE END]**
     """
 
     def __init__(self):
@@ -78,13 +95,19 @@ class GeminiClient(LLMProvider):
         prompt = f"""
         --- START SYSTEM INSTRUCTION ---
         {self.SYSTEM_PROMPT}
+        
+        --- OUTPUT FORMAT INSTRUCTION ---
 
+        1.  **Strict Adherence:** Your complete output must be a **single, valid JSON object** that conforms exactly to the structure defined by the `ReportModel` schema provided between the tags below.
+        2.  **Constraint:** You **MUST NOT** include any part of the JSON Schema definition itself, any surrounding prose, explanations, or Markdown fences (like ```json).
+        3.  **Target Object:** Start your response directly with the opening curly brace of the `ReportModel` object.
+        
         [JSON SCHEMA BEGIN]
         {json.dumps(review_schema_dict, indent=2)}
         [JSON SCHEMA END]
         --- END SYSTEM INSTRUCTION ---
 
-        Please start to analyze the following code diff:
+        Please analyze the following code diff and provide the completed ReportModel JSON object:
         [GIT DIFF CONTENT START]
         {contents}
         [GIT DIFF CONTENT END]
