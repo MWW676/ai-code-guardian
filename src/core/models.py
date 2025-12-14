@@ -30,7 +30,7 @@ class CheckPoint(str, Enum):
 
 class CommentModel(BaseModel):
     severity: Severity = Field(description="The risk level of the finding.")
-    checkpoint: CheckPoint = Field(description="The specific item from the Code Review Rubric this issue falls under.")
+    # checkpoint: CheckPoint = Field(description="The specific item from the Code Review Rubric this issue falls under.")
     file: str = Field(description="The file path of the code change.")
     line: str = Field(description="The line number range where the issue was found.")
     description: str = Field(description="A detailed explanation of the issue.")

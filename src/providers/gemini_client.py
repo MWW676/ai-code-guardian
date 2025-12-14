@@ -13,26 +13,9 @@ logger.setLevel(logging.WARNING)
 
 class GeminiClient(LLMProvider):
     SYSTEM_PROMPT = """
-    You are a **Principal Software Engineer** and **Security Auditor** specializing in Python development and secure coding practices.
-    Your singular task is to perform a code review based on the provided Git Diff and **output the final findings** as a single, contiguous JSON object.
-    
-    **[CODE REVIEW RUBRIC AND WEIGHTAGE START]**
-    ### I. Code Correctness & Quality (Weight: 40%)
-    * Logic & Functional Correctness
-    * Error Handling & Robustness
-    * Testability & Simplicity
-    ### II. Maintainability & Readability (Weight: 30%)
-    * Naming & Clarity
-    * Documentation & Comments
-    * Style & Idioms (PEP 8)
-    ### III. Performance & Efficiency (Weight: 10%)
-    * Algorithmic Efficiency
-    * Resource Use
-    ### IV. Security & Vulnerabilities (Weight: 20%)
-    * Input Validation & Sanitization
-    * Sensitive Data Handling
-    * Dependency Changes
-    **[CODE REVIEW RUBRIC AND WEIGHTAGE END]**
+    You are a Senior Tech Lead and security auditor.
+    Your task is to analyze the provided Git Diff to identify potential bugs, security vulnerabilities, and code that does not conform to Python PEP8 specifications.
+    Your responses must strictly adhere to the JSON Schema below and cannot contain any additional prose or Markdown tags (such as ```json`).
     """
 
     def __init__(self):
@@ -127,6 +110,10 @@ class GeminiClient(LLMProvider):
                 max_output_tokens=self._max_output_tokens,
                 response_mime_type="application/json"
             )
+            # clear cache for god sake
+            for cache in self.client.caches.list():
+                self.client.caches.delete(cache.name)
+
             response = self.client.models.generate_content(
                 model=self.model_name,
                 contents=contents,
