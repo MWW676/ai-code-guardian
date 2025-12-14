@@ -40,7 +40,7 @@ class GeminiClient(LLMProvider):
         if not api_key:
             raise EnvironmentError("GEMINI_API_KEY not found in environment.")
         self.client = genai.Client(api_key=api_key)
-        self.model_name = "gemini-2.5-flash-lite"
+        self.model_name = "gemini-2.5-flash"
 
         # --- Define Known Limits ---
         self._MAX_RPD: int = 20
