@@ -1,7 +1,7 @@
 import json
 import logging
-from providers.gemini_client import GeminiClient
-from providers.s3_client import S3Uploader
+from src.providers.gemini_client import GeminiClient
+from src.providers.s3_client import S3Uploader
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
