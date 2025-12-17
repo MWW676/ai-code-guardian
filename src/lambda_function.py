@@ -9,54 +9,58 @@ logger.setLevel(logging.INFO)
 
 def lambda_handler(event, context):
     # print event for debug ease
-    logger.info(f"Received event: {event}")
+    logger.info(f"Received event: {json.dumps(event)}")
+
+    # Filter PR event by header
+    headers = event.get('headers', {})
+    github_event = headers.get('X-GitHub-Event') or headers.get('x-github-event')
+
+    if github_event == 'ping':
+        logger.info("Received Github ping event, return 200.")
+        return {'statusCode': 200, 'body': json.dumps({'message': 'Pong!'})}
+
+    # Process event payload
     event_body = event.get('body')
     if not event_body:
-        logger.error("No event body provided in event.")
+        logger.error("No event body provided.")
         return {
             'statusCode': 400,
             'body': json.dumps({'error': 'Missing event body.'})
         }
-    payload = json.loads(event_body)
+    payload = json.loads(event_body) if isinstance(event_body, str) else event_body
+
+    # Filter PR action for analysis
+    action = payload.get('action')
+    if action not in ['opened', 'synchronize']:
+        logger.info(f"Ignoring action {action}. Only open and synchronize actions are supported.")
+        return {
+            'statusCode': 200,
+            'body': json.dumps({'message': f'Action {action} ignored.'})
+        }
+
     repo_full_name = payload.get('repository', {}).get('full_name')
-    if not repo_full_name:
-        logger.error("No repo_full_name provided in the event.")
-        return {
-            'statusCode': 400,
-            'body': json.dumps({'error': 'Missing repo_full_name.'})
-        }
-
     pull_request_number = payload.get('pull_request', {}).get('number')
-    if not pull_request_number:
-        logger.error("No pull_request_number provided in the event.")
+    if not repo_full_name or not pull_request_number:
+        logger.error("Missing repo name or PR number metadata.")
         return {
             'statusCode': 400,
-            'body': json.dumps({'error': 'Missing pull_request_number.'})
+            'body': json.dumps({'error': 'Bad payload.'})
         }
 
-    # Call Github API to retrieve git diff
-    github_client = GithubClient()
     try:
-        logger.info("Start retrieving Git diff...")
-        diff_data = github_client.get_diff(repo_full_name=repo_full_name, pr_number=int(pull_request_number))
+        # Call Github API to retrieve git diff
+        logger.info(f"Fetching Git diff for {repo_full_name} PR#{pull_request_number}...")
+        github_client = GithubClient()
+        diff_data = github_client.get_diff(repo_full_name=repo_full_name, pr_number=pull_request_number)
         if diff_data == 'ERROR':
-            logger.error("Encounter github API error when retrieving git diff for analysis.")
             return {
-                'statusCode': 400,
-                'body': json.dumps({'error': "Github API error."})
+                'statusCode': 502,
+                'body': json.dumps({'error': "Failed to fetch diff from Github."})
             }
 
-    except Exception as e:
-        logger.error(f"Critical execution error:{str(e)}", exc_info=True)
-        return {
-            'statusCode': 500,
-            'body': json.dumps({'error': str(e)})
-        }
-
-    # Call Gemini API to perform analysis on git diff
-    try:
-        provider = GeminiClient()
+        # Call Gemini API to perform analysis on git diff
         logger.info("Starting AI analysis ...")
+        provider = GeminiClient()
         resp = provider.analyze_diff(contents=diff_data)
 
         if resp.get('status') in ['ERROR', 'SKIPPED']:
