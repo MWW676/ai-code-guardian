@@ -1,7 +1,6 @@
 import os
 import logging
 import requests
-from dotenv import load_dotenv
 from src.providers.github_base import GithubProvider
 
 logger = logging.getLogger(__name__)
@@ -23,22 +22,14 @@ class GithubClient(GithubProvider):
         }
 
         try:
-            response = requests.get(url=diff_path, headers=headers)
+            response = requests.get(url=diff_path, headers=headers, timeout=10)
             if response.status_code == 200:
-                logger.info(f"Get Git diff successful: {response.text}")
+                logger.info(f"Successfully fetch diff for PR#{pr_number} ({len(response.text)} chars)")
                 return response.text
             else:
-                logger.warning(f"Get Git diff failed: {response.json()}")
+                logger.warning(f"Github API error: {response.status_code} - {response.text[:100]}")
                 return 'ERROR'
-        except RuntimeError as e:
-            logger.error(f"Runtime error from Github API GET req: {str(e)}")
-            return 'ERROR'
-        except Exception as e:
-            logger.error(f"Unexpected error from Github API GET req: {str(e)}")
-            return 'ERROR'
 
-if __name__ == "__main__":
-    load_dotenv()
-    github_client = GithubClient()
-    res = github_client.get_diff(repo_full_name='fang407/learning', pr_number=1)
-    print(res)
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Network error while fetching diff: {str(e)}")
+            return 'ERROR'
