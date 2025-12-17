@@ -37,9 +37,10 @@ def lambda_handler(event, context):
     # Call Github API to retrieve git diff
     github_client = GithubClient()
     try:
+        logger.info("Start retrieving Git diff...")
         diff_data = github_client.get_diff(repo_full_name=repo_full_name, pr_number=int(pull_request_number))
         if diff_data == 'ERROR':
-            logger.warning("Encounter github API error when retrieving git diff for analysis.")
+            logger.error("Encounter github API error when retrieving git diff for analysis.")
             return {
                 'statusCode': 400,
                 'body': json.dumps({'error': "Github API error."})
