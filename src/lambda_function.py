@@ -6,11 +6,18 @@ from src.providers.s3_client import S3Uploader
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-def lambda_handler(event, context):
+def lambda_handler(event, context=None):
     # print event for debug ease
     logger.info(f"Received event: {event}")
+    event_body = event.get('body')
+    if not event_body:
+        logger.error("No event body provided in event.")
+        return {
+            'statusCode': 400,
+            'body': json.dumps({'error': 'Missing event body.'})
+        }
 
-    diff_data = event.get('diff_text')
+    diff_data = json.loads(event_body).get('diff_text')
     if not diff_data:
         logger.error("No diff_text provided in the event.")
         return {
