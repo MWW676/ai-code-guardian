@@ -18,15 +18,7 @@ def lambda_handler(event, context=None):
             'body': json.dumps({'error': 'Missing event body.'})
         }
 
-    # diff_data = json.loads(event_body).get('diff_text')
-    # if not diff_data:
-    #     logger.error("No diff_text provided in the event.")
-    #     return {
-    #         'statusCode': 400,
-    #         'body': json.dumps({'error': 'Missing diff_text.'})
-    #     }
-
-    repo_full_name = json.loads(json.loads(event_body).get('repository')).get('full_name')
+    repo_full_name = json.loads(event_body).get('repository').get('full_name')
     if not repo_full_name:
         logger.error("No repo_full_name provided in the event.")
         return {
@@ -34,7 +26,7 @@ def lambda_handler(event, context=None):
             'body': json.dumps({'error': 'Missing repo_full_name.'})
         }
 
-    pull_request_number = json.loads(event_body).get('diff_text')
+    pull_request_number = json.loads(event_body).get('pull_request').get('number')
     if not pull_request_number:
         logger.error("No pull_request_number provided in the event.")
         return {
