@@ -17,8 +17,8 @@ def lambda_handler(event, context=None):
             'statusCode': 400,
             'body': json.dumps({'error': 'Missing event body.'})
         }
-
-    repo_full_name = json.loads(event_body).get('repository').get('full_name')
+    payload = json.loads(event_body)
+    repo_full_name = payload.get('repository', {}).get('full_name')
     if not repo_full_name:
         logger.error("No repo_full_name provided in the event.")
         return {
@@ -26,7 +26,7 @@ def lambda_handler(event, context=None):
             'body': json.dumps({'error': 'Missing repo_full_name.'})
         }
 
-    pull_request_number = json.loads(event_body).get('pull_request').get('number')
+    pull_request_number = payload.get('pull_request', {}).get('number')
     if not pull_request_number:
         logger.error("No pull_request_number provided in the event.")
         return {
