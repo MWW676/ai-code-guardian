@@ -72,35 +72,35 @@ class GeminiClient(LLMProvider):
         self.LAST_REQUEST_TIME = now
         return True
 
-    def generate_prompt(self, contents: str) -> str:
+    def generate_system_instruction(self) -> str:
         # Construct prompt
-        review_schema_dict = ReportModel.model_json_schema()
-        prompt = f"""
-        --- START SYSTEM INSTRUCTION ---
+        schema_dict = ReportModel.model_json_schema()
+        schema_str = json.dumps(schema_dict, indent=2)
+
+        sys_instruction = f"""
         {self.SYSTEM_PROMPT}
-        
-        --- OUTPUT FORMAT INSTRUCTION ---
+        ### IMPORTANT RULES:
+        1. You are a STRICT code reviewer. Do not summarize changes. Find BUGS and RISKS.
+        2. If the code is just formatting changes or perfectly fine, return risk_score: 0.
+        3. Your Output MUST be a valid JSON object matching the schema below.
 
-        1.  **Strict Adherence:** Your complete output must be a **single, valid JSON object** that conforms exactly to the structure defined by the `ReportModel` schema provided between the tags below.
-        2.  **Constraint:** You **MUST NOT** include any part of the JSON Schema definition itself, any surrounding prose, explanations, or Markdown fences (like ```json).
-        3.  **Target Object:** Start your response directly with the opening curly brace of the `ReportModel` object.
-        
-        [JSON SCHEMA BEGIN]
-        {json.dumps(review_schema_dict, indent=2)}
-        [JSON SCHEMA END]
-        --- END SYSTEM INSTRUCTION ---
-
-        Please analyze the following code diff and provide the completed ReportModel JSON object:
-        [GIT DIFF CONTENT START]
-        {contents}
-        [GIT DIFF CONTENT END]
+        ### OUTPUT JSON SCHEMA:
+        {schema_str}
         """
-        return prompt
+        return sys_instruction
 
     def analyze_diff(self, contents: str) -> dict:
         """Generates content through Gemini open api call."""
-        final_prompt = self.generate_prompt(contents=contents)
-        if not self.check_and_reset_limits(contents=final_prompt):
+        sys_instruction = self.generate_system_instruction()
+        user_message = f"""
+        Please analyze the following Git Diff:
+        
+        [GIT DIFF START]
+        {contents}
+        [GIT DIFF END]
+        """
+
+        if not self.check_and_reset_limits(contents=user_message):
             logger.warning("Limit or token quota check failed.")
             return {"status":"SKIPPED", "reason": "Rate/Token limit exceeded."}
 
@@ -108,11 +108,14 @@ class GeminiClient(LLMProvider):
             logger.info(f"Evaluating code diff with model: {self.model_name}...")
             config_object = types.GenerateContentConfig(
                 max_output_tokens=self._max_output_tokens,
-                response_mime_type="application/json"
+                response_mime_type="application/json",
+                system_instruction=sys_instruction,
+                temperature=0.1
             )
+
             response = self.client.models.generate_content(
                 model=self.model_name,
-                contents=contents,
+                contents=user_message,
                 config=config_object,
             )
 
