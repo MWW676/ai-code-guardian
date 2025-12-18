@@ -16,7 +16,7 @@ def format_report_to_markdown(report_data: dict) -> str:
     comments = result.get('comments')
 
     report_title = f"# 🤖AI Code Review Report\n"
-    report_summary = f"## 📊Summary\n- Overall Status:{status_emoji.get(status_enum, "❓")}{status}\n- Risk Score: {score}/100\n"
+    report_summary = f"## 📊Summary\n- **Overall Status**:{status_emoji.get(status_enum, "❓")}{status}\n- **Risk Score**: {score}/100\n"
     detail_findings = "## 🔍Detailed Findings\n"
 
     details = []
@@ -25,8 +25,8 @@ def format_report_to_markdown(report_data: dict) -> str:
         category = comment.get('category', 'N/A')
         severity_enum = Severity(severity)
         category_enum = IssueCategory(category)
-        detail = (f"### {severity_emoji.get(severity_enum, "❓")}[{severity}]\n- Category: {category_emoji.get(category_enum, "❓")}{category}\n- File: {comment.get('file', 'N/A')}\n- Location: Lines {comment.get('line', 'N/A')}\n"
-                  f"- Checkpoint: {comment.get('checkpoint', 'N/A')}\n- Description: {comment.get('description', 'N/A')}\n- Suggestion: {comment.get('suggestion', 'N/A')}\n")
+        detail = (f"### {severity_emoji.get(severity_enum, "❓")}[{severity}] - {comment.get('file', 'N/A')}\n- **Location**: Lines {comment.get('line', 'N/A')}\n- **Category**: {category_emoji.get(category_enum, "❓")}{category}\n"
+                  f"- **Checkpoint**: {comment.get('checkpoint', 'N/A')}\n- **Description**: {comment.get('description', 'N/A')}\n- **💡Suggestion**: {comment.get('suggestion', 'N/A')}\n")
         details.append(detail)
 
     report = report_title + report_summary + detail_findings + "\n".join(details)

@@ -1,5 +1,4 @@
 import os
-import json
 import logging
 import requests
 from src.providers.github_base import GithubProvider
@@ -42,10 +41,10 @@ class GithubClient(GithubProvider):
             "Accept": "application/vnd.github+json",
             "Authorization": f"Bearer {self.api_key}"
         }
-        data = json.dumps({"body": pr_comments})
+        payload = {"body": pr_comments}
 
         try:
-            response = requests.post(url=post_comment_path, headers=headers, data=data, timeout=10)
+            response = requests.post(url=post_comment_path, headers=headers, json=payload, timeout=10)
             if response.status_code == 201:
                 logger.info(f"Successfully posted comment for PR#{pr_number} ({len(response.text)} chars)")
                 return True

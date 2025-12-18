@@ -79,28 +79,21 @@ def lambda_handler(event, context):
         github_client = GithubClient()
         post_success = github_client.post_comment(repo_full_name=repo_full_name, pr_number=pull_request_number, pr_comments=markdown_report)
         if not post_success:
-            return {
-                'statusCode': 502,
-                'body': json.dumps({'error': "Failed to post comments to Github."})
-            }
+            logger.error("⚠️ Failed to post comment to GitHub, but proceeding to S3 upload.")
 
         # Store report results
         uploader = S3Uploader()
         upload_success = uploader.save_report(resp)
 
-        if not upload_success:
-            logger.error("Failed to upload report to S3.")
-            return {
-                'statusCode': 500,
-                'body': json.dumps({'error': 'S3 Upload Failed.'})
-            }
+        resp_body = {
+            'message': 'Analysis complete.',
+            's3_upload': 'Success' if upload_success else 'Failed',
+            'github_comment': 'Success' if post_success else 'Failed',
+            'data': resp
+        }
         return {
             'statusCode': 200,
-            'body': json.dumps({
-                'message': 'Analysis complete.',
-                's3_upload': 'Success',
-                'data': resp
-            })
+            'body': json.dumps(resp_body)
         }
 
     except Exception as e:
