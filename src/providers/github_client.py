@@ -46,11 +46,11 @@ class GithubClient(GithubProvider):
 
         try:
             response = requests.post(url=post_comment_path, headers=headers, data=data, timeout=10)
-            if response.status_code == 200:
+            if response.status_code == 201:
                 logger.info(f"Successfully posted comment for PR#{pr_number} ({len(response.text)} chars)")
                 return True
             else:
-                logger.warning(f"Github API error: {response.status_code} - {response.text[:100]}")
+                logger.warning(f"Github API error: {response.status_code} - {response.text}")
                 return False
 
         except requests.exceptions.RequestException as e:
