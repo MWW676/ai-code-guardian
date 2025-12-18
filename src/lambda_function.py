@@ -3,6 +3,7 @@ import logging
 from src.providers.gemini_client import GeminiClient
 from src.providers.s3_client import S3Uploader
 from src.providers.github_client import GithubClient
+from src.utils.markdown_utils import format_report_to_markdown
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -70,6 +71,20 @@ def lambda_handler(event, context):
                 'body': json.dumps(resp)
             }
 
+        # Generate markdown report
+        markdown_report = format_report_to_markdown(report_data=resp)
+
+        # Call Github API to post report as PR comment
+        logger.info(f"Posting comment for {repo_full_name} PR#{pull_request_number}...")
+        github_client = GithubClient()
+        post_status = github_client.post_comment(repo_full_name=repo_full_name, pr_number=pull_request_number, pr_comments=markdown_report)
+        if not post_status:
+            return {
+                'statusCode': 502,
+                'body': json.dumps({'error': "Failed to post comments to Github."})
+            }
+
+        # Store report results
         uploader = S3Uploader()
         upload_success = uploader.save_report(resp)
 
