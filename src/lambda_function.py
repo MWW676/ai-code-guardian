@@ -77,8 +77,8 @@ def lambda_handler(event, context):
         # Call Github API to post report as PR comment
         logger.info(f"Posting comment for {repo_full_name} PR#{pull_request_number}...")
         github_client = GithubClient()
-        post_status = github_client.post_comment(repo_full_name=repo_full_name, pr_number=pull_request_number, pr_comments=markdown_report)
-        if not post_status:
+        post_success = github_client.post_comment(repo_full_name=repo_full_name, pr_number=pull_request_number, pr_comments=markdown_report)
+        if not post_success:
             return {
                 'statusCode': 502,
                 'body': json.dumps({'error': "Failed to post comments to Github."})
