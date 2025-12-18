@@ -21,7 +21,7 @@ class GeminiClient(LLMProvider):
     **Mandatory Procedure:**
     1.  **Analyze Holistically:** Evaluate the changes as if they were being merged into a production system.
     2.  **Apply Checklist:** Systematically apply the **Code Review Rubric and Weightage** provided below.
-    3.  **Strict Output:** Your response must **strictly adhere** to the JSON Schema provided. Do not include the rubric, any prose, or Markdown tags (e.g., \`\`\`json) outside of the JSON object itself.
+    3.  **Strict Output:** Your response must **strictly adhere** to the JSON Schema provided. Do not include the rubric, any prose, or Markdown tags outside of the JSON object itself.
     
     **[CODE REVIEW RUBRIC AND WEIGHTAGE START]**
     ### I. Code Correctness & Quality (Weight: 40%)
