@@ -17,7 +17,7 @@ def format_report_to_markdown(report_data: dict) -> str:
 
     report_title = f"# 🤖AI Code Review Report\n"
     report_summary = f"## 📊Summary\n- Overall Status:{status_emoji.get(status_enum, "❓")}{status}\n- Risk Score: {score}/100\n"
-    detail_findings = "## 🔍Detailed Findings"
+    detail_findings = "## 🔍Detailed Findings\n"
 
     details = []
     for comment in comments:
