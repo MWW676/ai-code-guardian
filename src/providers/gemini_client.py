@@ -52,10 +52,9 @@ class GeminiClient(LLMProvider):
     --- END SYSTEM INSTRUCTION ---
     """
 
-    def __init__(self):
-        api_key = os.environ.get('GEMINI_API_KEY')
+    def __init__(self, api_key: str):
         if not api_key:
-            raise EnvironmentError("GEMINI_API_KEY not found in environment.")
+            raise EnvironmentError("GEMINI_API_KEY not found SSM configs.")
         self.client = genai.Client(api_key=api_key)
         self.model_name = "gemini-2.5-flash"
 
@@ -64,7 +63,6 @@ class GeminiClient(LLMProvider):
         self._MAX_TPM: int = 250_000
         self._max_output_tokens = 6000
         # --- Global Tracking Variables ---
-        # TODO: Implement DynamoDB for persistent rate limiting in Lambda
         self.DAILY_REQUEST_COUNT: int = 0
         self.LAST_REQUEST_TIME: float = time.time()
         self.CURRENT_MINUTE_TOKEN_COUNT: int = 0

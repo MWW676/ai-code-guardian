@@ -11,10 +11,10 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 class S3Uploader(StorageProvider):
-    def __init__(self):
-        self._bucket_name = os.environ.get('AWS_S3_BUCKET')
+    def __init__(self, bucket_name: str):
+        self._bucket_name = bucket_name
         if not self._bucket_name:
-            raise ValueError("AWS_S3_BUCKET environment variable is not set.")
+            raise ValueError("AWS_S3_BUCKET not found in SSM configs.")
         self.s3_client = boto3.client('s3')
 
     def save_report(self, report_data: dict) -> bool:

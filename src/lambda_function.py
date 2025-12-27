@@ -5,11 +5,26 @@ from src.providers.s3_client import S3Uploader
 from src.providers.github_client import GithubClient
 from src.utils.markdown_utils import format_report_to_markdown
 from src.utils.security_utils import verify_github_signature
+from src.utils.ssm_config_paths import *
 import boto3
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 ssm_client = boto3.client('ssm')
+
+def get_configs():
+    try:
+        names = [
+            GEMINI_API_KEY,
+            GITHUB_WEB_SECRET,
+            GITHUB_API_KEY,
+            S3_BUCKET_NAME
+        ]
+        resp = ssm_client.get_parameters(Names=names, WithDecryption=True)
+        return {p['Name']: p['Value'] for p in resp['Parameters']}
+    except Exception as e:
+        logger.error(f"Failed to load ssm configs: {e}")
+        return {}
 
 def lambda_handler(event, context):
     # print event for debug ease
@@ -26,21 +41,10 @@ def lambda_handler(event, context):
         return {'statusCode': 200, 'body': json.dumps({'message': 'Pong!'})}
 
     # Verify Github signature
-    try:
-        resp = ssm_client.get_parameters(
-            Names=['/CodeGuardian/GEMINI_API_KEY', '/CodeGuardian/GITHUB_WEB_SECRET'],
-            WithDecryption=True
-        )
-        if resp.get('InvalidParameters'):
-            logger.warning(f"Missing parameters: {resp['InvalidParameters']}")
-        params = {p['Name']: p['Value'] for p in resp['Parameters']}
-        github_secret_token = params.get('/CodeGuardian/GITHUB_WEB_SECRET')
-
-    except Exception as e:
-        logger.error(f"Error fetching parameters: {e}")
-        return {'statusCode': 500, 'body': 'Internal Config Error.'}
-
+    configs = get_configs()
+    github_secret_token = configs.get(GITHUB_WEB_SECRET)
     github_signature = headers.get('X-Hub-Signature-256') or headers.get('x-hub-signature-256')
+
     verify_success = verify_github_signature(
         payload_body=event_body,
         signature_header=github_signature,
@@ -67,15 +71,15 @@ def lambda_handler(event, context):
     # Fetch diff and perform analysis
     try:
         # Call Github API to fetch diff
-        logger.info(f"Fetching Git diff for {repo_full_name} PR#{pull_request_number}...")
-        github_client = GithubClient()
+        logger.info(f"Fetching Git diff for {repo_full_name} PR #{pull_request_number}...")
+        github_client = GithubClient(api_key=configs.get(GITHUB_API_KEY))
         diff_data = github_client.get_diff(repo_full_name=repo_full_name, pr_number=pull_request_number)
         if diff_data == 'ERROR':
             return {'statusCode': 502, 'body': json.dumps({'error': "Failed to fetch diff from Github."})}
 
         # Call Gemini API to perform analysis
         logger.info("Starting AI analysis ...")
-        provider = GeminiClient()
+        provider = GeminiClient(api_key=configs.get(GEMINI_API_KEY))
         resp = provider.analyze_diff(contents=diff_data)
 
         if resp.get('status') in ['ERROR', 'SKIPPED']:
@@ -87,13 +91,12 @@ def lambda_handler(event, context):
 
         # Call Github API to post report as PR comment
         logger.info(f"Posting comment for {repo_full_name} PR#{pull_request_number}...")
-        github_client = GithubClient()
         post_success = github_client.post_comment(repo_full_name=repo_full_name, pr_number=pull_request_number, pr_comments=markdown_report)
         if not post_success:
             logger.error("⚠️ Failed to post comment to GitHub, but proceeding to S3 upload.")
 
         # Store report results
-        uploader = S3Uploader()
+        uploader = S3Uploader(bucket_name=configs.get(S3_BUCKET_NAME))
         upload_success = uploader.save_report(resp)
 
         resp_body = {

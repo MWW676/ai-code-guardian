@@ -7,10 +7,10 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 class GithubClient(GithubProvider):
-    def __init__(self):
-        self.api_key = os.environ.get('GITHUB_API_KEY')
+    def __init__(self, api_key: str):
+        self.api_key = api_key
         if not self.api_key:
-            raise EnvironmentError("GITHUB_API_KEY not found in env variables.")
+            raise EnvironmentError("GITHUB_API_KEY not found in SSM configs.")
         self.base_url = "https://api.github.com"
 
     def get_diff(self, repo_full_name: str, pr_number: int) -> str:
