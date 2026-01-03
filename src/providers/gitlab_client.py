@@ -1,4 +1,4 @@
-
+import urllib.parse
 import logging
 import requests
 from src.providers.base_provider import GitProvider
@@ -18,7 +18,8 @@ class GitlabClient(GitProvider):
         :param repo_full_name: maps to project_id
         :param pr_number: maps to ::iid
         """
-        diff_path = f'{self.base_url}/projects/{repo_full_name}/merge_requests/{str(pr_number)}/diffs'
+        encoded_repo = urllib.parse.quote(repo_full_name, safe='')
+        diff_path = f'{self.base_url}/projects/{encoded_repo}/merge_requests/{str(pr_number)}/diffs'
         headers = {
             "Accept": "application/json",
             "Private-Token": f"{self.api_key}"
@@ -44,7 +45,8 @@ class GitlabClient(GitProvider):
         :param repo_full_name: maps to project_id
         :param pr_number: maps to ::iid
         """
-        post_comment_path = f'{self.base_url}/projects/{repo_full_name}/merge_requests/{str(pr_number)}/notes'
+        encoded_repo = urllib.parse.quote(repo_full_name, safe='')
+        post_comment_path = f'{self.base_url}/projects/{encoded_repo}/merge_requests/{str(pr_number)}/notes'
         headers = {
             "Accept": "application/json",
             "Private-Token": f"{self.api_key}"
