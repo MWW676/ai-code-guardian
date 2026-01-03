@@ -72,12 +72,13 @@ def lambda_handler(event, context):
 
         repo_full_name = payload.get('repository', {}).get('full_name')
         pull_request_number = payload.get('pull_request', {}).get('number')
-        if not repo_full_name or not pull_request_number:
-            logger.error("Missing repo name or PR number metadata.")
+        commit_sha = payload.get('pull_request', {}).get('head', {}).get('sha')
+        if not repo_full_name or not pull_request_number or not commit_sha:
+            logger.error("Missing repo name or PR number or commit SHA in metadata.")
             return {'statusCode': 400, 'body': json.dumps({'error': 'Bad payload.'})}
 
         # Pack msg for SQS
-        msg = {'repo_full_name': repo_full_name, 'pr_number': pull_request_number, 'platform': platform}
+        msg = {'repo_full_name': repo_full_name, 'pr_number': pull_request_number, 'commit_sha': commit_sha, 'platform': platform}
 
     elif platform == 'gitlab':
         # Filter event type
@@ -105,12 +106,13 @@ def lambda_handler(event, context):
         # Extract metadata
         repo_full_name = payload.get('project', {}).get('path_with_namespace')
         pull_request_number = obj_attr.get('iid')
-        if not repo_full_name or not pull_request_number:
+        commit_sha = obj_attr.get('last_commit', {}).get('id')
+        if not repo_full_name or not pull_request_number or not commit_sha:
             logger.error("Missing GitLab metadata")
             return {'statusCode': 400, 'body': 'Bad Request'}
 
         # Pack msg for SQS
-        msg = {'repo_full_name': repo_full_name, 'pr_number': pull_request_number, 'platform': platform}
+        msg = {'repo_full_name': repo_full_name, 'pr_number': pull_request_number, 'commit_sha': commit_sha, 'platform': platform}
 
     try:
         resp = sqs_client.send_message(

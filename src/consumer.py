@@ -2,6 +2,7 @@ import json
 import logging
 from src.providers.gemini_client import GeminiClient
 from src.providers.s3_client import S3Uploader
+from src.providers.dynamodb_client import DynamodbClient
 from src.providers.github_client import GithubClient
 from src.providers.gitlab_client import GitlabClient
 from src.utils.markdown_utils import format_report_to_markdown
@@ -19,7 +20,8 @@ def get_configs():
             GEMINI_API_KEY,
             GITHUB_API_KEY,
             GITLAB_API_KEY,
-            S3_BUCKET_NAME
+            S3_BUCKET_NAME,
+            DYNAMODB_TABLE_NAME
         ]
         resp = ssm_client.get_parameters(Names=names, WithDecryption=True)
         return {p['Name']: p['Value'] for p in resp['Parameters']}
@@ -32,12 +34,15 @@ def lambda_handler(event, context):
     # print message for debug ease
     logger.info(f"Received message: {json.dumps(event)}")
     configs = get_configs()
+    uploader = S3Uploader(bucket_name=configs.get(S3_BUCKET_NAME))
+    db_client = DynamodbClient(table_name=configs.get(DYNAMODB_TABLE_NAME))
 
     for record in event['Records']:
         # Retrieve repo and pr_number
         body = json.loads(record['body'])
         repo_full_name = body.get('repo_full_name')
         pull_request_number = body.get('pr_number')
+        commit_sha = body.get('commit_sha')
         platform = body.get('platform')
         if not repo_full_name or not pull_request_number:
             logger.error("Missing repo name or PR number in message.")
@@ -45,6 +50,13 @@ def lambda_handler(event, context):
         if platform not in [item.value for item in GitPlatform]:
             logger.error(f"Unknown platform in message: {platform}")
             raise Exception
+
+        # check/save commit record
+        record_id = f"{platform}#{repo_full_name}#{pull_request_number}#{commit_sha}"
+        record_exist = db_client.check_processed(record_id)
+        if record_exist:
+            logger.info("Already analyzed this commit, skipping.")
+            continue
 
         # Fetch diff and perform analysis
         try:
@@ -68,7 +80,7 @@ def lambda_handler(event, context):
 
             if resp.get('status') == 'SKIPPED':
                 logger.warning(f'Analysis skipped due to query quota exceeded: {resp}')
-                return Exception
+                break
 
             elif resp.get('status') == 'ERROR':
                 logger.error(f"Error during AI analysis: {resp}")
@@ -84,9 +96,7 @@ def lambda_handler(event, context):
                 logger.error(f"⚠️ Failed to post comment to {platform}, but proceeding to S3 upload.")
 
             # Store report results
-            uploader = S3Uploader(bucket_name=configs.get(S3_BUCKET_NAME))
             upload_success = uploader.save_report(resp)
-
             execution_result = {
                 'message': 'Analysis complete.',
                 's3_upload': 'Success' if upload_success else 'Failed',
@@ -94,6 +104,11 @@ def lambda_handler(event, context):
                 'data': resp
             }
             logger.info(f"Consumer execution completed, results: {json.dumps(execution_result)}")
+
+            # Update commit record to dynamoDB
+            update_record = db_client.mark_as_processed(record_id, status='SUCCESS')
+            if not update_record:
+                logger.error("Failed to update commit record to dynamoDB.")
 
         except Exception as e:
             logger.error(f"Critical execution error:{str(e)}", exc_info=True)
