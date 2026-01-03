@@ -1,12 +1,12 @@
-import os
+
 import logging
 import requests
-from src.providers.github_base import GithubProvider
+from src.providers.base_provider import GitProvider
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-class GithubClient(GithubProvider):
+class GithubClient(GitProvider):
     def __init__(self, api_key: str):
         self.api_key = api_key
         if not self.api_key:
