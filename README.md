@@ -41,10 +41,3 @@ Create a table named `CodeGuardian-Logs` with:
 
 ### 3. Lambda Deployment
 Deploy `producer.py` and `consumer.py` as separate Lambda functions. Set up an SQS queue as the trigger for the consumer.
-
-## 🎓 SAA Exam Context (Mapping)
-
-This project is a perfect hands-on lab for **AWS Certified Solutions Architect - Associate** candidates:
-* **Decoupling**: SQS for asynchronous processing.
-* **Idempotency**: DynamoDB to handle duplicate message delivery.
-* **Security**: SSM Parameter Store for secure secret management.
