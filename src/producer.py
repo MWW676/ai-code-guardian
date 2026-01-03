@@ -14,7 +14,7 @@ def get_configs():
     try:
         names = [
             GITHUB_WEB_SECRET,
-            GITHUB_API_KEY,
+            GITLAB_WEB_SECRET,
             SQS_URL
         ]
         resp = ssm_client.get_parameters(Names=names, WithDecryption=True)
@@ -31,42 +31,86 @@ def lambda_handler(event, context):
     headers = event.get('headers', {})
     event_body = event.get('body', '')
 
-    # Filter ping event
-    github_event = headers.get('X-GitHub-Event') or headers.get('x-github-event')
-    if github_event == 'ping':
-        logger.info("Received Github ping event, return 200.")
-        return {'statusCode': 200, 'body': json.dumps({'message': 'Pong!'})}
+    # Check platform
+    platform = None
+    if headers.get('X-GitHub-Event'):
+        platform = 'github'
+    if headers.get('X-Gitlab-Event'):
+        platform = 'gitlab'
+    if not platform:
+        logger.error("Event received from unknown platform.")
+        return {'statusCode': 401, 'body': 'Unrecognized Event.'}
 
-    # Verify Github signature
     configs = get_configs()
-    github_secret_token = configs.get(GITHUB_WEB_SECRET)
-    github_signature = headers.get('X-Hub-Signature-256') or headers.get('x-hub-signature-256')
+    if platform == 'github':
+        # Filter ping event
+        github_event = headers.get('X-GitHub-Event') or headers.get('x-github-event')
+        if github_event == 'ping':
+            logger.info("Received ping event, return 200.")
+            return {'statusCode': 200, 'body': json.dumps({'message': 'Pong!'})}
 
-    verify_success = verify_github_signature(
-        payload_body=event_body,
-        signature_header=github_signature,
-        secret_token=github_secret_token
-    )
-    if not verify_success:
-        logger.warning(f"[{__name__}] Invalid Github signature.")
-        return {'statusCode': 401, 'body': 'Invalid Signature.'}
+        # Verify Github signature
+        github_secret_token = configs.get(GITHUB_WEB_SECRET)
+        github_signature = headers.get('X-Hub-Signature-256') or headers.get('x-hub-signature-256')
 
-    # Filter PR action from event
-    payload = json.loads(event_body) if isinstance(event_body, str) else event_body
-    action = payload.get('action')
+        verify_success = verify_github_signature(
+            payload_body=event_body,
+            signature_header=github_signature,
+            secret_token=github_secret_token
+        )
+        if not verify_success:
+            logger.warning(f"[{__name__}] Invalid Github signature.")
+            return {'statusCode': 401, 'body': 'Invalid Signature.'}
 
-    if action not in ['opened', 'synchronize']:
-        logger.info(f"Ignoring action {action}. Only open and synchronize actions are supported.")
-        return {'statusCode': 200, 'body': json.dumps({'message': f'Action {action} ignored.'})}
+        # Filter PR action from event
+        payload = json.loads(event_body) if isinstance(event_body, str) else event_body
+        action = payload.get('action')
 
-    repo_full_name = payload.get('repository', {}).get('full_name')
-    pull_request_number = payload.get('pull_request', {}).get('number')
-    if not repo_full_name or not pull_request_number:
-        logger.error("Missing repo name or PR number metadata.")
-        return {'statusCode': 400, 'body': json.dumps({'error': 'Bad payload.'})}
+        if action not in ['opened', 'synchronize']:
+            logger.info(f"Ignoring action {action}. Only open and synchronize actions are supported.")
+            return {'statusCode': 200, 'body': json.dumps({'message': f'Action {action} ignored.'})}
 
-    # Pack and send msg to SQS
-    msg = {'repo_full_name': repo_full_name, 'pr_number': pull_request_number}
+        repo_full_name = payload.get('repository', {}).get('full_name')
+        pull_request_number = payload.get('pull_request', {}).get('number')
+        if not repo_full_name or not pull_request_number:
+            logger.error("Missing repo name or PR number metadata.")
+            return {'statusCode': 400, 'body': json.dumps({'error': 'Bad payload.'})}
+
+        # Pack msg for SQS
+        msg = {'repo_full_name': repo_full_name, 'pr_number': pull_request_number, 'platform': platform}
+
+    elif platform == 'gitlab':
+        # Filter event type
+        event_type = headers.get('X-Gitlab-Event') or headers.get('x-gitlab-event')
+
+        if event_type != 'Merge Request Hook':
+            logger.info(f"Ignoring GitLab event: {event_type}")
+            return {'statusCode': 200, 'body': 'Ignore'}
+
+        # 2. Verify gitlab token
+        header_token = headers.get('X-Gitlab-Token')
+        if header_token != configs.get(GITLAB_WEB_SECRET):
+            logger.warning("Invalid GitLab Secret Token")
+            return {'statusCode': 401, 'body': 'Unauthorized'}
+
+        # 3. Check payload and filter PR actions
+        payload = json.loads(event_body) if isinstance(event_body, str) else event_body
+        obj_attr = payload.get('object_attributes', {})
+        action = obj_attr.get('action')
+
+        if action not in ['open', 'update']:
+            logger.info(f"GitLab action {action} ignored.")
+            return {'statusCode': 200, 'body': 'Ignored action'}
+
+        # Extract metadata
+        repo_full_name = payload.get('project', {}).get('path_with_namespace')
+        pull_request_number = obj_attr.get('iid')
+        if not repo_full_name or not pull_request_number:
+            logger.error("Missing GitLab metadata")
+            return {'statusCode': 400, 'body': 'Bad Request'}
+
+        # Pack msg for SQS
+        msg = {'repo_full_name': repo_full_name, 'pr_number': pull_request_number, 'platform': platform}
 
     try:
         resp = sqs_client.send_message(
