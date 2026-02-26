@@ -162,9 +162,14 @@ class GeminiClient(LLMProvider):
 
             try:
                 ai_result = json.loads(clean_json_str)
+                validated_report = ReportModel(**ai_result)
+                logger.info("AI result validated against schema successfully.")
             except json.JSONDecodeError:
                 logger.error(f"Failed to parse JSON: {raw_text}")
                 ai_result = {"status": "ERROR", "error": raw_text}
+            except Exception as e:
+                logger.error(f"AI response failed schema validation: {e}")
+                ai_result = {"status": "ERROR", "error": f"Schema Validation Error"}
 
             resp_dict = {
                 "result": ai_result,

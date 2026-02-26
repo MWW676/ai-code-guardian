@@ -1,0 +1,53 @@
+- name: "Perfect Happy Path"
+  expected_valid: true
+  payload:
+    status: "PASS"
+    risk_score: 10
+    comments:
+      - severity: "INFO"
+        category: "MAINTAINABILITY"
+        checkpoint: "Naming & Clarity"
+        file: "main.py"
+        line: "1-10"
+        description: "Looks good"
+        suggestion: "None"
+
+# Hallucination on severity value
+- name: "Invalid Severity Enum Value"
+  expected_valid: false
+  error_snippet: "Input should be 'CRITICAL', 'MINOR' or 'INFO'"
+  payload:
+    status: "FAIL"
+    risk_score: 80
+    comments:
+      - severity: "HIGH"
+        category: "SECURITY"
+        checkpoint: "Sensitive Data Handling"
+        file: "config.py"
+        line: "5"
+        description: "Hardcoded key"
+        suggestion: "Use SSM"
+
+# Missed return field
+- name: "Missing Required Field"
+  expected_valid: false
+  error_snippet: "Field required"
+  payload:
+    status: "PASS"
+    risk_score: 10
+    comments:
+      - severity: "INFO"
+        category: "CORRECTNESS"
+        checkpoint: "Logic & Functional Correctness"
+        line: "1"
+        description: "missing file field."
+        suggestion: "N/A"
+
+# Field values out of bound
+- name: "Boundary Violation"
+  expected_valid: false
+  error_snippet: "Input should be less than or equal to 100"
+  payload:
+    status: "PASS"
+    risk_score: 999
+    comments: []
