@@ -1,8 +1,6 @@
 from src.providers.github_client import GithubClient
 from src.providers.gemini_client import GeminiClient
-import logging
-
-logger = logging.getLogger(__name__)
+from tests import logger
 
 def test_review_process_flow(mock_requests_lib, mock_gemini_client):
     repo_name, pr_number = "dummy_repo", 1

@@ -1,14 +1,11 @@
 import pytest
 import yaml
-import logging
-import os
 from pydantic import ValidationError
 from src.core.models import ReportModel
-
-logger = logging.getLogger(__name__)
+from tests import logger, TEST_DATA_DIR
 
 def load_schema_cases():
-    file_path = os.path.join(os.path.dirname(__file__), "test_data/schema_test_cases.yaml")
+    file_path = TEST_DATA_DIR / "schema_test_cases.yaml"
     with open(file_path, 'r') as f:
         return yaml.safe_load(f)
 

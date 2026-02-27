@@ -1,4 +1,4 @@
-import pytest
+
 from google.genai.errors import APIError
 from src.providers.gemini_client import GeminiClient
 

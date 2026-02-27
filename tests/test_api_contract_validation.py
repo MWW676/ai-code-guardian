@@ -1,13 +1,11 @@
 from pathlib import Path
-import os
 import json
 import pytest
 from jsonschema import validate, ValidationError
+from tests import TEST_DATA_DIR
 
 def test_api_contract_validation():
-    # file_path = os.path.join(os.path.dirname(__file__), "test_data/schema_test_cases_v2.json")
-    base_path = Path(__file__).parent
-    file_path = base_path / 'test_data' / 'schema_test_cases_v2.json'
+    file_path = TEST_DATA_DIR / 'schema_test_cases_v2.json'
     with open(file_path, 'r') as f:
         schema = json.load(f)
 
