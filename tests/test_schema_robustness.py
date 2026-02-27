@@ -1,8 +1,11 @@
 import pytest
 import yaml
+import logging
 import os
 from pydantic import ValidationError
 from src.core.models import ReportModel
+
+logger = logging.getLogger(__name__)
 
 def load_schema_cases():
     file_path = os.path.join(os.path.dirname(__file__), "test_data/schema_test_cases.yaml")
@@ -18,4 +21,4 @@ def test_ai_output_schema_validation(case):
         with pytest.raises(ValidationError) as exc_info:
             ReportModel(**case['payload'])
         assert case['error_snippet'] in str(exc_info.value)
-        print(f"\n✅ Corrected caught expected error: {case['name']}")
+        logger.info(f"\n✅ Corrected caught expected error: {case['name']}")

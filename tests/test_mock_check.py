@@ -1,11 +1,13 @@
 from src.providers.gemini_client import GeminiClient
 from src.providers.github_client import GithubClient
+import logging
+logger = logging.getLogger(__name__)
 
 def test_mock_check(mock_gemini_client, mock_requests_lib):
     client = GeminiClient(api_key='fake')
     client.analyze_diff('test')
 
-    print(mock_gemini_client.models.generate_content.call_args_list)
+    logger.info(mock_gemini_client.models.generate_content.call_args_list)
     assert mock_gemini_client.models.generate_content.called
 
     github_client = GithubClient(api_key="fake")
