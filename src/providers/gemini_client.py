@@ -8,7 +8,7 @@ from google.genai import types
 from google.genai.errors import APIError
 from src.providers.llm_base import LLMProvider
 from src.core.models import ReportModel
-from src.utils.prompt_utils import render_review_prompt, render_diff_prompt
+from src.utils.prompt_utils import render_system_instrcution_prompt, render_user_message_prompt
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -82,7 +82,7 @@ class GeminiClient(LLMProvider):
         schema_dict = ReportModel.model_json_schema()
         schema_str = json.dumps(schema_dict, indent=2)
 
-        sys_instruction = render_review_prompt(
+        sys_instruction = render_system_instrcution_prompt(
             policy_name=self.policy_name,
             persona_instruction=persona_instruction,
             schema_str=schema_str
@@ -92,7 +92,7 @@ class GeminiClient(LLMProvider):
     def analyze_diff(self, contents: str) -> dict:
         """Generates content through Gemini open api call."""
         sys_instruction = self.generate_system_instruction()
-        user_message = render_diff_prompt(diff_content=contents)
+        user_message = render_user_message_prompt(diff_content=contents)
 
         if not self.check_and_reset_limits(contents=user_message):
             logger.warning("Limit or token quota check failed.")
