@@ -11,7 +11,13 @@ def mock_gemini_response():
     """
     mock_resp = MagicMock()
     # This mimics the json the AI would return
-    mock_resp.text = '{"status": ```"PASS"```, ```json"risk_score"```: "35", "comments": []}'
+    mock_resp.text = '''{
+        "status": "PASS", 
+        "risk_score": 10, 
+        "applied_policy": "SECURITY_FIRST",
+        "policy_alignment_score": 95,
+        "comments": []
+    }'''
     mock_resp.usage_metadata.total_token_count = 150
     return mock_resp
 

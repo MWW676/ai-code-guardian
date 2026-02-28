@@ -1,5 +1,5 @@
 from enum import Enum
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 class ReviewStatus(str, Enum):
     PASS = "PASS"
@@ -46,4 +46,13 @@ class CommentModel(BaseModel):
 class ReportModel(BaseModel):
     status: ReviewStatus = Field(description="The overall status of the code review.")
     risk_score: int = Field(ge=0, le=100, description="Overall risk score from 0 to 100.")
+    applied_policy: str = Field(description="The name of the policy the AI followed for this review.")
+    policy_alignment_score: int = Field(ge=0, le=100, description="Self-assessment score (0-100) of how well the AI followed the  specific policy lens.")
     comments: list[CommentModel] = Field(description="A list of specific issues found in the diff.")
+
+    @field_validator('policy_alignment_score')
+    @classmethod
+    def check_minimum_alignment(cls, v:int):
+        if v < 50:
+            raise ValueError("AI alignment score is too low for a reliable review.")
+        return v
