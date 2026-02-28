@@ -18,7 +18,7 @@ def test_gemini_successful_parsing(mock_gemini_client):
 
     assert isinstance(resp, dict)
     assert resp['result']['status'] == 'PASS'
-    assert resp['token_used'] == 150
+    assert resp['metadata']['token_used'] == 150
 
 def test_gemini_failed_parsing(mock_gemini_client, mock_gemini_response):
     mock_gemini_response.text = '{"status": "PASS", "risk_score": '

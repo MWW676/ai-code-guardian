@@ -3,6 +3,7 @@ import json
 import time
 import yaml
 import logging
+import hashlib
 from google import genai
 from google.genai import types
 from google.genai.errors import APIError
@@ -89,7 +90,11 @@ class GeminiClient(LLMProvider):
         )
         return sys_instruction
 
+    def _get_diff_hash(self, contents: str):
+        return hashlib.sha256(contents.encode('utf-8')).hexdigest()
+
     def analyze_diff(self, contents: str) -> dict:
+        diff_hash = self._get_diff_hash(contents)
         """Generates content through Gemini open api call."""
         sys_instruction = self.generate_system_instruction()
         user_message = render_user_message_prompt(diff_content=contents)
@@ -135,8 +140,13 @@ class GeminiClient(LLMProvider):
             resp_dict = {
                 "result": ai_result,
                 "status": ai_result.get('status'),
-                "timestamp": time.time(),
-                "token_used": response.usage_metadata.total_token_count if response.usage_metadata else 0
+                "metadata": {
+                    "diff_hash": diff_hash,
+                    "policy_used": self.policy_name,
+                    "timestamp": time.time(),
+                    "model": self.model_name,
+                    "token_used": response.usage_metadata.total_token_count if response.usage_metadata else 0
+                }
             }
             return resp_dict
 

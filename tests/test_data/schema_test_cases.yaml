@@ -3,6 +3,8 @@
   payload:
     status: "PASS"
     risk_score: 10
+    applied_policy: "SECURITY_FIRST"
+    policy_alignment_score: 100
     comments:
       - severity: "INFO"
         category: "MAINTAINABILITY"
@@ -19,6 +21,8 @@
   payload:
     status: "FAIL"
     risk_score: 80
+    applied_policy: "EFFICIENCY_FIRST"
+    policy_alignment_score: 100
     comments:
       - severity: "HIGH"
         category: "SECURITY"
@@ -35,6 +39,8 @@
   payload:
     status: "PASS"
     risk_score: 10
+    applied_policy: "COMPLAINCE_STRICT"
+    policy_alignment_score: 95
     comments:
       - severity: "INFO"
         category: "CORRECTNESS"
@@ -50,4 +56,6 @@
   payload:
     status: "PASS"
     risk_score: 999
+    applied_policy: "SECURITY_FIRST"
+    policy_alignment_score: 100
     comments: []
