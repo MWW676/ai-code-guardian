@@ -143,7 +143,7 @@ class GeminiClient(LLMProvider):
                 "metadata": {
                     "diff_hash": diff_hash,
                     "policy": self.policy_name,
-                    "timestamp": time.time(),
+                    "timestamp": int(time.time()),
                     "model": self.model_name,
                     "token_used": response.usage_metadata.total_token_count if response.usage_metadata else 0
                 }
