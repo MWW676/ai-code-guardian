@@ -1,0 +1,17 @@
+[
+    {
+        "target": "G001 | SECURITY_FIRST",
+        "avg_score": 95.0,
+        "drift": 0.0
+    },
+    {
+        "target": "G002 | SECURITY_FIRST",
+        "avg_score": 87.5,
+        "drift": 3.54
+    },
+    {
+        "target": "G003 | SECURITY_FIRST",
+        "avg_score": 52.5,
+        "drift": 24.75
+    }
+]

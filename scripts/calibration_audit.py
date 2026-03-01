@@ -60,7 +60,6 @@ if __name__ == "__main__":
     with multiprocessing.Pool(processes=MAX_ITER_COUNT) as pool:
         results = pool.map(run_benchmark_iteration, tasks)
 
-    policy = tasks[0][0]
-    result_file_path = TEST_DATA_DIR / f"telemetry_benchmarks_{policy}.json"
+    result_file_path = TEST_DATA_DIR / f"telemetry_benchmarks.json"
     with open(result_file_path, "w") as f:
         json.dump(results, f, indent=2)

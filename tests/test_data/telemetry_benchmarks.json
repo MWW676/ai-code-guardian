@@ -1,0 +1,50 @@
+[
+  {
+    "diff_id": "G001",
+    "policy": "SECURITY_FIRST",
+    "iteration": 0,
+    "risk_score": 95,
+    "alignment": 100,
+    "diff_hash": "257092844fd73a72a3212cb4dbb29b615f734aac2802e8cd3db86f5db0a569ac"
+  },
+  {
+    "diff_id": "G001",
+    "policy": "SECURITY_FIRST",
+    "iteration": 1,
+    "risk_score": 95,
+    "alignment": 98,
+    "diff_hash": "257092844fd73a72a3212cb4dbb29b615f734aac2802e8cd3db86f5db0a569ac"
+  },
+  {
+    "diff_id": "G002",
+    "policy": "SECURITY_FIRST",
+    "iteration": 0,
+    "risk_score": 90,
+    "alignment": 100,
+    "diff_hash": "2a19de5338397485cb6509092931bdebcef0c68b1c3734ce0aa89af3fb93d77d"
+  },
+  {
+    "diff_id": "G002",
+    "policy": "SECURITY_FIRST",
+    "iteration": 1,
+    "risk_score": 85,
+    "alignment": 98,
+    "diff_hash": "2a19de5338397485cb6509092931bdebcef0c68b1c3734ce0aa89af3fb93d77d"
+  },
+  {
+    "diff_id": "G003",
+    "policy": "SECURITY_FIRST",
+    "iteration": 0,
+    "risk_score": 35,
+    "alignment": 100,
+    "diff_hash": "caa96397706f9cced1e658ae30977a92a8e365a66e2e46028dba1f86e8fe902f"
+  },
+  {
+    "diff_id": "G003",
+    "policy": "SECURITY_FIRST",
+    "iteration": 1,
+    "risk_score": 70,
+    "alignment": 100,
+    "diff_hash": "caa96397706f9cced1e658ae30977a92a8e365a66e2e46028dba1f86e8fe902f"
+  }
+]
