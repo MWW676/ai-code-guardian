@@ -1,0 +1,20 @@
+# tests/test_data/golden_set.yaml
+- id: "G001"
+  type: "SQL_INJECTION"
+  diff: |
+    - query = "SELECT * FROM users WHERE id = " + user_id
+    + query = f"SELECT * FROM users WHERE id = {user_id}"
+
+- id: "G002"
+  type: "NESTS_LOOPS"
+  diff: |
+    + for i in list_a:
+    +     for j in list_b:
+    +         process(i, j)
+
+- id: "G003"
+  type: "CLEAN_CODE"
+  diff: |
+    + def calculate_total(price: float, tax: float) -> float:
+    +     """Calculates total price including tax."""
+    +     return price * (1 + tax)
