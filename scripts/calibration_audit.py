@@ -2,6 +2,7 @@ import multiprocessing
 import logging
 import os
 from dotenv import load_dotenv
+from src.utils.config_manager import config
 from src.providers.gemini_client import GeminiClient
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -17,7 +18,7 @@ def run_single_audit(policy_name):
     return policy_name, result
 
 if __name__ == "__main__":
-    policies_to_test = ["SECURITY_FIRST", "EFFICIENCY_FIRST", "COMPLIANCE_STRICT"]
+    policies_to_test = config.available_policies
     load_dotenv()
 
     with multiprocessing.Pool(processes=len(policies_to_test)) as pool:

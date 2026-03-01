@@ -31,10 +31,13 @@ class DynamodbClient:
             logger.error(f"Error accessing DynamoDB: {str(e)}")
             return False
 
-    def mark_as_processed(self, record_id: str, status: str) -> bool:
+    def mark_as_processed(self, record_id: str, status: str, metadata: dict, result: dict) -> bool:
         try:
             self.table.put_item(
-                Item={'request_id': record_id, 'status': status},
+                Item={'request_id': record_id,
+                      'status': status,
+                      'metadata': metadata,
+                      'result': result},
                 ConditionExpression='attribute_not_exists(request_id)'
             )
             logger.info(f"Successfully added record: {record_id}")

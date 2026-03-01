@@ -8,6 +8,7 @@ from src.providers.gitlab_client import GitlabClient
 from src.utils.markdown_utils import format_report_to_markdown
 from src.utils.ssm_config_paths import *
 from src.utils.git_platforms import GitPlatform
+from src.core.policy_ratator import PolicyRotator
 import boto3
 
 logger = logging.getLogger(__name__)
@@ -75,7 +76,8 @@ def lambda_handler(event, context):
 
             # Call Gemini API to perform analysis
             logger.info("Starting AI analysis ...")
-            provider = GeminiClient(api_key=configs.get(GEMINI_API_KEY))
+            selected_policy = PolicyRotator.get_random_policy()
+            provider = GeminiClient(api_key=configs.get(GEMINI_API_KEY), policy_name=selected_policy)
             resp = provider.analyze_diff(contents=diff_data)
 
             if resp.get('status') == 'SKIPPED':
@@ -106,7 +108,7 @@ def lambda_handler(event, context):
             logger.info(f"Consumer execution completed, results: {json.dumps(execution_result)}")
 
             # Update commit record to dynamoDB
-            update_record = db_client.mark_as_processed(record_id, status='SUCCESS')
+            update_record = db_client.mark_as_processed(record_id, status='SUCCESS', metadata=resp['metadata'], result=resp['result'])
             if not update_record:
                 logger.error("Failed to update commit record to dynamoDB.")
 
