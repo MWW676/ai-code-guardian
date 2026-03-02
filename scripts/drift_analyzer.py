@@ -5,6 +5,7 @@ import logging, sys
 from tests import TEST_DATA_DIR
 from src.providers.dynamodb_reader import DynamodbReader
 from src.core.models import ReportModel
+from src.utils.decimal_encoder import DecimalEncoder
 from pydantic import ValidationError
 
 logger = logging.getLogger(__name__)
@@ -76,14 +77,14 @@ class DriftAnalyzer:
 
         result_file_path = TEST_DATA_DIR / "prod_snapshot.json"
         with open(result_file_path, "w") as f:
-            json.dump(dist_summary, f, indent=4)
+            json.dump(dist_summary, f, indent=4, cls=DecimalEncoder)
 
 
 if __name__ == "__main__":
     analyzer = DriftAnalyzer()
-    benchmark_data_file = TEST_DATA_DIR / "telemetry_benchmarks.json"
-    if benchmark_data_file.exists():
-        analyzer.calculate_stability(benchmark_data_file)
+    # benchmark_data_file = TEST_DATA_DIR / "telemetry_benchmarks.json"
+    # if benchmark_data_file.exists():
+    #     analyzer.calculate_stability(benchmark_data_file)
 
-    # table_name = 'CodeGuardian-Logs'
-    # analyzer.calculate_performance_distribution(table_name=table_name)
+    table_name = 'CodeGuardian-Logs'
+    analyzer.calculate_performance_distribution(table_name=table_name)
