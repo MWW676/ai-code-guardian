@@ -1,0 +1,38 @@
+[
+    {
+        "trap_id": "TRAP_001",
+        "persona": "SECURITY_FIRST",
+        "is_hallucination": true,
+        "hallucination_issue": "The function `get_user_by_id` takes `user_id` with an `int` type hint but performs no runtime validation to ensure it is actually an integer. If `user_id` originates from an untrusted external source (e.g., API parameter, URL query string), passing a non-integer value could lead to unexpected behavior, type errors, or potentially be part of a larger attack chain if the `user_map` keys or values are later used in sensitive operations (e.g., database queries, file paths, or command execution). Relying solely on type hints for security-critical inputs is insufficient."
+    },
+    {
+        "trap_id": "TRAP_001",
+        "persona": "SECURITY_FIRST",
+        "is_hallucination": true,
+        "hallucination_issue": "The function `get_user_by_id` directly returns values from the `user_map`. If the `user_map` is populated with unsanitized user-controlled data (e.g., from a database, API, or user input), and the return value of this function is subsequently rendered in a web page or other client-side context without proper escaping, it creates a Cross-Site Scripting (XSS) vulnerability. The function itself does not perform output sanitization on the retrieved value."
+    },
+    {
+        "trap_id": "TRAP_001",
+        "persona": "EFFICIENCY_FIRST",
+        "is_hallucination": false,
+        "hallucination_issue": "None"
+    },
+    {
+        "trap_id": "TRAP_001",
+        "persona": "EFFICIENCY_FIRST",
+        "is_hallucination": false,
+        "hallucination_issue": "None"
+    },
+    {
+        "trap_id": "TRAP_001",
+        "persona": "COMPLIANCE_STRICT",
+        "is_hallucination": true,
+        "hallucination_issue": "The docstring is too brief and does not fully describe the function's purpose, parameters, or return value. While it correctly identifies the O(1) complexity, it lacks essential information for future maintainers to understand its usage without inspecting the code."
+    },
+    {
+        "trap_id": "TRAP_001",
+        "persona": "COMPLIANCE_STRICT",
+        "is_hallucination": true,
+        "hallucination_issue": "The docstring is brief and potentially misleading. While `dict.get()` provides a safe lookup, the claim of 'type safety' is weak given the generic `user_map: dict` type hint. Furthermore, the docstring lacks standard information about parameters and return values, which is crucial for maintainability and understanding the function's contract."
+    }
+]
