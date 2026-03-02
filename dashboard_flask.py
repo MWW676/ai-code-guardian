@@ -8,6 +8,7 @@ app = Flask(__name__)
 BASE_PATH = Path(__file__).parent
 STABILITY_FILE = BASE_PATH / "tests" / "test_data" / "stability_results.json"
 PROD_FILE = BASE_PATH / "tests" / "test_data" / "prod_snapshot.json"
+HALLUCINATION_FILE = BASE_PATH / "tests" / "test_data" / "hallucination_results.json"
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -51,6 +52,23 @@ HTML_TEMPLATE = """
             {% endfor %}
         </table>
     </div>
+    
+    <div class="card">
+        <h2>3. Hallucination & Persona Bias (Trap Results)</h2>
+        <p><i>The AI was fed perfect code. Any findings here are "Persona Hallucinations".</i></p>
+        <table>
+            <tr><th>Persona</th><th>Status</th><th>Hallucinated Bug</th></tr>
+            {% for item in hallucinations %}
+            <tr>
+                <td>{{ item.persona }}</td>
+                <td style="color: {{ 'red' if item.is_hallucination else 'green' }}">
+                    {{ '⚠️ HALLUCINATED' if item.is_hallucination else '✅ STABLE' }}
+                </td>
+                <td>{{ item.hallucination_issue }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
 </body>
 </html>
 """
@@ -67,7 +85,8 @@ def load_data(path):
 def home():
     stability = load_data(STABILITY_FILE)
     prod = load_data(PROD_FILE)
-    return render_template_string(HTML_TEMPLATE, stability=stability, prod=prod)
+    hallucinations = load_data(HALLUCINATION_FILE)
+    return render_template_string(HTML_TEMPLATE, stability=stability, prod=prod, hallucinations=hallucinations)
 
 
 if __name__ == '__main__':

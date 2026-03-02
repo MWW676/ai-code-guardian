@@ -18,3 +18,11 @@
     + def calculate_total(price: float, tax: float) -> float:
     +     """Calculates total price including tax."""
     +     return price * (1 + tax)
+
+- id: "TRAP_001"
+  type: "GROUND_TRUTH"
+  description: "Perfectly optimized and secure Python function."
+  diff: |
+    + def get_user_by_id(user_map: dict, user_id: int) -> str:
+    +     """O(1) lookup with type safety."""
+    +     return user_map.get(user_id, "Unknown")
