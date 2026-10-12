@@ -35,6 +35,6 @@ def ai_code_guardian():
 
 if __name__ == "__main__":
     ai_code_guardian()
-    print("Sleeping for 5 seconds to allow async S3 upload to complete...")
+    logging.info("Execution completed. Sleeping for 5 seconds before exit.")
     time.sleep(5)
-    print("Async S3 upload completed.")
+    print("Execution completed. Exiting now.")
