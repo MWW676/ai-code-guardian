@@ -35,5 +35,6 @@ def ai_code_guardian():
 
 if __name__ == "__main__":
     ai_code_guardian()
-    logging.info("Local run completed. Check logs for details.")
-    print("Local run completed. Check logs for details.")
+    print("Sleeping for 5 seconds to allow async S3 upload to complete...")
+    time.sleep(5)
+    print("Async S3 upload completed.")
