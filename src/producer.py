@@ -24,18 +24,16 @@ def get_configs():
         return {}
 
 def lambda_handler(event, context):
-    # print event for debug ease
-    logger.info(f"Received event: {json.dumps(event)}")
-
     # Retrieve header and event
-    headers = event.get('headers', {})
+    # headers = event.get('headers', {})
+    headers = {k.lower(): v for k, v in event.get("headers", {}).items()}
     event_body = event.get('body', '')
 
     # Check platform
     platform = None
-    if headers.get('X-GitHub-Event'):
+    if headers.get('x-github-event'):
         platform = 'github'
-    if headers.get('X-Gitlab-Event'):
+    if headers.get('x-gitlab-event'):
         platform = 'gitlab'
     if not platform:
         logger.error("Event received from unknown platform.")
@@ -89,7 +87,7 @@ def lambda_handler(event, context):
             return {'statusCode': 200, 'body': 'Ignore'}
 
         # 2. Verify gitlab token
-        header_token = headers.get('X-Gitlab-Token')
+        header_token = headers.get('x-gitlab-token')
         if header_token != configs.get(GITLAB_WEB_SECRET):
             logger.warning("Invalid GitLab Secret Token")
             return {'statusCode': 401, 'body': 'Unauthorized'}

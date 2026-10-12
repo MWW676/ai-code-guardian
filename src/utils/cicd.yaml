@@ -1,0 +1,41 @@
+"""
+This configuration builds a protective gating pipeline using GitHub Actions. 
+It leverages ruff for fast PEP 8 architectural scanning to weed out format-based noise, 
+followed by automated test execution.
+"""
+
+name: Advanced AI Code Quality & Triage Pipeline
+
+on:
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  triage-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install System Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install hypothesis pytest pytest-cov ruff
+
+      - name: Enforce Architecture & Style (Ruff)
+        run: |
+          # Fails if structural or style constraints are broken, avoiding messy AI comments
+          ruff check . --format=github
+
+      - name: Execute Property-Based & Negative Tests
+        run: |
+          # Flood AI code changes with hundreds of inputs to verify error-handling paths
+          pytest --hypothesis-show-statistics --cov=.

@@ -1,0 +1,22 @@
+# src/core/policies.yaml
+
+SECURITY_FIRST:
+  description: "Focuses on vulnerabilities, input sanitization, and secrets."
+  instruction: >
+    Perform this review as a Security Architect. Prioritize finding SQL Injection, XSS, 
+    and hardcoded credentials. Be extremely strict about input validation.
+    Ignore minor stylistic issues.
+
+EFFICIENCY_FIRST:
+  description: "Focuses on Big-O complexity and resource management."
+  instruction: >
+    Perform this review as a Performance Engineer. Prioritize finding redundant loops, 
+    memory leaks, and algorithmic inefficiencies. 
+    Suggest more Pythonic, high-performance alternatives.
+
+COMPLIANCE_STRICT:
+  description: "Focuses on documentation, naming standards, and PEP 8."
+  instruction: >
+    Perform this review as a Lead Developer focused on maintainability. Prioritize 
+    naming clarity, docstrings, and adherence to PEP 8 standards. 
+    Ensure every function has a clear purpose and documentation.
