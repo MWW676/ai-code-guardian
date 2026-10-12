@@ -4,6 +4,7 @@ import pathlib
 from dotenv import load_dotenv
 from providers.gemini_client import GeminiClient
 from providers.s3_client import S3Uploader
+import time
 
 logging.basicConfig(
     level=logging.INFO,
@@ -34,3 +35,5 @@ def ai_code_guardian():
 
 if __name__ == "__main__":
     ai_code_guardian()
+    print("Sleeping for 5 seconds to allow async S3 upload to complete...")
+    time.sleep(5)
