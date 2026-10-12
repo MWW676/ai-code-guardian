@@ -4,6 +4,7 @@ import pathlib
 from dotenv import load_dotenv
 from providers.gemini_client import GeminiClient
 from providers.s3_client import S3Uploader
+import time
 
 logging.basicConfig(
     level=logging.INFO,
@@ -34,3 +35,5 @@ def ai_code_guardian():
 
 if __name__ == "__main__":
     ai_code_guardian()
+    logging.info("Local run completed. Check logs for details.")
+    print("Local run completed. Check logs for details.")
